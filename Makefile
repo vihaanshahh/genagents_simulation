@@ -18,16 +18,15 @@ help:
 	@echo "  make docker-clean       - Remove Docker images and containers"
 	@echo ""
 	@echo "API Server Commands:"
-	@echo "  make start              - Start API server in background"
+	@echo "  make start              - Start API server with docker-compose"
 	@echo "  make stop               - Stop API server"
 	@echo "  make restart            - Restart API server"
-	@echo "  make status             - Check server status"
-	@echo "  make api-test           - Test API endpoints"
-	@echo "  make sim-test           - Test simulation with formatted output"
-	@echo "  make stream-test        - Test streaming simulation with progress"
-	@echo "  make list-sims          - List running simulations"
-	@echo "  make cancel-sim ID=xxx  - Cancel a running simulation"
+	@echo "  make status             - Check server status and health"
 	@echo "  make logs               - View API server logs"
+	@echo "  make api-test           - Test API endpoints"
+	@echo "  make sim-test           - Test simulation (set QUESTION and AGENTS)"
+	@echo "  make stream-test        - Test streaming simulation"
+	@echo "  make list               - List running containers"
 	@echo ""
 	@echo "Local Commands:"
 	@echo "  make run                - Run simulation locally"
@@ -133,48 +132,68 @@ docker-full: docker-setup docker-build docker-run
 
 # Start API server
 start:
-	@./start.sh
+	@echo "Starting API server with docker-compose..."
+	@docker-compose up -d
+	@echo "API server started! Access at http://localhost:8000"
+	@echo "Admin dashboard: http://localhost:8000/admin"
 
 # Stop API server
 stop:
-	@./stop.sh
-
-# Test API
-api-test:
-	@./test-api.sh
-
-# Test simulation with formatted output
-sim-test:
-	@./test-simulation.sh "$(QUESTION)" $(AGENTS)
-
-# Test streaming simulation
-stream-test:
-	@./test-stream.sh "$(QUESTION)" $(AGENTS)
-
-# List running simulations
-list-sims:
-	@./list-simulations.sh
-
-# Alias for list-sims
-list: list-sims
-
-# Cancel a simulation
-cancel-sim:
-	@if [ -z "$(ID)" ]; then \
-		echo "Usage: make cancel-sim ID=<simulation_id>"; \
-		echo "First run: make list-sims"; \
-		exit 1; \
-	fi
-	@./cancel-simulation.sh $(ID)
-
-# View logs
-logs:
-	@docker logs -f genagents-api
+	@echo "Stopping API server..."
+	@docker-compose down
+	@echo "API server stopped."
 
 # Restart API server
 restart:
-	@./restart.sh
+	@echo "Restarting API server..."
+	@docker-compose restart
+	@echo "API server restarted!"
 
 # Check status
 status:
-	@./status.sh
+	@echo "Container Status:"
+	@docker-compose ps
+	@echo ""
+	@echo "Health Check:"
+	@curl -f http://localhost:8000/health 2>/dev/null && echo "API is healthy!" || echo "API is not responding"
+
+# View logs
+logs:
+	@docker-compose logs -f genagents-api
+
+# Test API health endpoint
+api-test:
+	@echo "Testing API endpoints..."
+	@echo ""
+	@echo "1. Health Check:"
+	@curl -s http://localhost:8000/health | python -m json.tool || echo "Failed"
+	@echo ""
+	@echo "2. Models endpoint:"
+	@curl -s http://localhost:8000/models | python -m json.tool || echo "Failed"
+	@echo ""
+	@echo "3. Metrics endpoint:"
+	@curl -s http://localhost:8000/metrics | python -m json.tool || echo "Failed"
+
+# Test simulation with formatted output
+sim-test:
+	@echo "Running simulation test..."
+	@curl -X POST http://localhost:8000/simulate \
+		-H "Content-Type: application/json" \
+		-d '{"question": "$(QUESTION)", "options": ["Yes", "No", "Undecided"], "agent_count": $(AGENTS), "llm_config_name": "$(LLM_CONFIG)", "use_memory": false}' \
+		| python -m json.tool
+
+# Test streaming simulation
+stream-test:
+	@echo "Running streaming simulation test..."
+	@echo "This will show real-time progress..."
+	@curl -X POST http://localhost:8000/simulate/stream \
+		-H "Content-Type: application/json" \
+		-d '{"question": "$(QUESTION)", "options": ["Yes", "No", "Undecided"], "agent_count": $(AGENTS), "llm_config_name": "$(LLM_CONFIG)", "use_memory": false}'
+
+# List running simulations
+list-sims:
+	@echo "Checking running containers..."
+	@docker-compose ps
+
+# Alias for list-sims
+list: list-sims

@@ -1,0 +1,142 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  DOCKER_IMAGE: genagents-simulation
+  DOCKER_TAG: latest
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max
+
+      - name: Set deployment variables
+        id: deploy_vars
+        run: |
+          echo "deploy_path=${{ secrets.DEPLOY_PATH || '/home/ubuntu/genagents_simulation' }}" >> $GITHUB_OUTPUT
+          echo "ssh_port=${{ secrets.AWS_SSH_PORT || '22' }}" >> $GITHUB_OUTPUT
+
+      - name: Deploy to AWS Instance
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USER }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          port: ${{ steps.deploy_vars.outputs.ssh_port }}
+          script: |
+            set -e
+            
+            echo "Starting deployment..."
+            
+            # Navigate to deployment directory
+            DEPLOY_DIR=${{ steps.deploy_vars.outputs.deploy_path }}
+            cd $DEPLOY_DIR
+            
+            # Set Docker username environment variable
+            export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            
+            # Check if deployment script exists, if so use it
+            if [ -f deploy.sh ]; then
+              echo "Using deploy.sh script..."
+              export IMAGE_TAG=${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+              bash deploy.sh
+            else
+              # Manual deployment steps
+              echo "Running manual deployment..."
+              
+              # Stop running containers
+              echo "Stopping existing containers..."
+              docker-compose -f docker-compose.yml down || docker-compose down || true
+              
+              # Pull latest image
+              echo "Pulling latest Docker image..."
+              docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+              
+              # Update docker-compose to use the new image
+              export IMAGE_TAG=${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+              
+              # Start containers
+              echo "Starting containers..."
+              docker-compose -f docker-compose.yml up -d || docker-compose up -d
+              
+              # Clean up old images
+              echo "Cleaning up old images..."
+              docker image prune -f
+              
+              # Show status
+              echo "Deployment complete! Container status:"
+              docker-compose ps
+              
+              # Show logs
+              echo "Recent logs:"
+              docker-compose logs --tail=50
+            fi
+
+      - name: Health Check
+        if: secrets.AWS_HOST != ''
+        run: |
+          echo "Waiting for service to start..."
+          MAX_ATTEMPTS=10
+          ATTEMPT=0
+          
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "Health check attempt $ATTEMPT/$MAX_ATTEMPTS..."
+            
+            if curl -f -s http://${{ secrets.AWS_HOST }}:8000/health > /dev/null 2>&1; then
+              echo "✓ Service is healthy!"
+              exit 0
+            fi
+            
+            if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+              echo "Service not ready yet, waiting 5 seconds..."
+              sleep 5
+            fi
+          done
+          
+          echo "⚠ Warning: Health check failed after $MAX_ATTEMPTS attempts"
+          echo "Service may still be starting up or health endpoint may not be accessible"
+          echo "Check the deployment logs for more information"
+
+      - name: Notify on Success
+        if: success()
+        run: |
+          echo "Deployment successful!"
+          echo "Commit: ${{ github.sha }}"
+          echo "Deployed by: ${{ github.actor }}"
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "Deployment failed!"
+          echo "Commit: ${{ github.sha }}"
+          echo "Check logs above for details"

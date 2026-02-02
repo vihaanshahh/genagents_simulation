@@ -14,8 +14,15 @@ Multi-agent simulation with **3,505 agents** powered by Cerebras AI.
 ## Quick Start
 
 ### Install
+
+**Local development:**
 ```bash
 pip install -r requirements.txt
+```
+
+**Docker (recommended for production):**
+```bash
+make docker-build
 ```
 
 ### Configure
@@ -37,6 +44,28 @@ AWS_SECRET_ACCESS_KEY=your_secret
 ```
 
 ### Run
+
+**Using Make (recommended):**
+```bash
+# Start API server
+make start
+
+# Check status
+make status
+
+# View logs
+make logs
+
+# Stop server
+make stop
+```
+
+**Using Docker Compose directly:**
+```bash
+docker-compose up -d
+```
+
+**Local development:**
 ```bash
 python -m genagents_simulation.api
 ```
@@ -267,6 +296,41 @@ AWS_REGION=us-east-1
 docker build -t genagents .
 docker run -p 8000:8000 --env-file .env genagents
 ```
+
+## Deployment
+
+### Auto-Deploy to AWS
+
+Push to `main` branch triggers automatic deployment to AWS EC2.
+
+**Quick setup:**
+1. See `QUICKSTART-DEPLOY.md` for 5-minute setup
+2. Configure GitHub secrets (Docker Hub + AWS)
+3. Push to main
+
+**Manual deployment:**
+```bash
+make docker-build
+make start
+```
+
+See `DEPLOYMENT.md` for detailed instructions.
+
+## Make Commands
+
+| Command | Description |
+|---------|-------------|
+| `make help` | Show all available commands |
+| `make start` | Start API server |
+| `make stop` | Stop API server |
+| `make restart` | Restart API server |
+| `make status` | Check server status |
+| `make logs` | View server logs |
+| `make api-test` | Test API endpoints |
+| `make sim-test` | Run simulation test |
+| `make docker-build` | Build Docker image |
+| `make docker-run` | Run simulation in Docker |
+| `make clean` | Clean temporary files |
 
 ## License
 
