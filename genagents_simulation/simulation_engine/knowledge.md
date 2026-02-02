@@ -6,15 +6,15 @@ Provides configuration and utilities for the simulation environment.
 ## Key Components
 - `settings.py`: Core configuration (created from example-settings.py)
 - `global_methods.py`: Shared utility functions
-- `gpt_structure.py`: OpenAI API interaction
+- `gpt_structure.py`: AWS Bedrock API interaction
 - `llm_json_parser.py`: Response parsing utilities
 
 ## Configuration
 - Create settings.py from example-settings.py template
 - Required settings:
-  - OPENAI_API_KEY
+  - AWS_BEARER_TOKEN_BEDROCK
   - KEY_OWNER
-  - LLM_VERS (default: "gpt-4o-mini")
+  - LLM_VERS (default: "gpt-oss-120b")
 
 ## Best Practices
 - Use safe_generate for all LLM calls

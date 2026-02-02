@@ -1,18 +1,214 @@
 [
     {
-        "config_name": "model_1",
-        "client": "ollama",
-        "model": "ollama/phi",
+        "config_name": "gpt-5-nano",
+        "client": "openai",
+        "model": "gpt-5-nano",
         "temperature": 0.7,
-        "max_tokens": 1000,
-        "api_base": "http://localhost:11434"
+        "max_tokens": 4000,
+        "context_window": 128000,
+        "languages": ["English"],
+        "modalities": {
+            "input": ["text"],
+            "output": ["text"]
+        },
+        "categories": ["hybrid_reasoning", "extended_thinking", "efficient_code_generation", "enhanced_text_generation", "agentic_search", "efficient_research", "computer_use", "tool_use", "task_efficiency", "steering_and_memory"],
+        "api_base": "https://api.openai.com/v1"
+    },
+    {
+        "config_name": "qwen-3-235b",
+        "client": "cerebras",
+        "model": "qwen-3-235b-a22b-instruct-2507",
+        "temperature": 0.7,
+        "max_tokens": 32000,
+        "context_window": 65000,
+        "speed_tokens_per_sec": 1400,
+        "rate_limits": {
+            "free": {
+                "requests_per_minute": 30,
+                "input_tokens_per_minute": 60000,
+                "daily_tokens": 1000000
+            }
+        },
+        "capabilities": ["streaming", "structured_outputs", "tool_calling", "prompt_caching"],
+        "languages": ["English"],
+        "modalities": {
+            "input": ["text"],
+            "output": ["text"]
+        },
+        "categories": ["text_generation", "code_generation", "reasoning", "tool_use"],
+        "api_base": "https://api.cerebras.ai/v1"
+    },
+    {
+        "config_name": "zai-glm-4.7",
+        "client": "cerebras",
+        "model": "zai-glm-4.7",
+        "temperature": 0.7,
+        "max_tokens": 40000,
+        "context_window": 64000,
+        "speed_tokens_per_sec": 1000,
+        "rate_limits": {
+            "free": {
+                "requests_per_minute": 10,
+                "input_tokens_per_minute": 60000,
+                "daily_tokens": 1000000
+            }
+        },
+        "capabilities": ["reasoning", "streaming", "structured_outputs", "tool_calling", "parallel_tool_calling", "prompt_caching"],
+        "languages": ["English"],
+        "modalities": {
+            "input": ["text"],
+            "output": ["text"]
+        },
+        "categories": ["reasoning", "code_generation", "tool_use", "agentic_workflows"],
+        "use_cases": ["agentic_coding", "real_world_performance", "advanced_reasoning"],
+        "api_base": "https://api.cerebras.ai/v1"
+    },
+    {
+        "config_name": "gpt-oss-120b",
+        "client": "cerebras",
+        "model": "gpt-oss-120b",
+        "temperature": 0.7,
+        "max_tokens": 32000,
+        "context_window": 65000,
+        "speed_tokens_per_sec": 3000,
+        "rate_limits": {
+            "free": {
+                "requests_per_minute": 30,
+                "input_tokens_per_minute": 60000,
+                "daily_tokens": 1000000
+            }
+        },
+        "capabilities": ["reasoning", "streaming", "structured_outputs", "tool_calling", "prompt_caching"],
+        "languages": ["English"],
+        "modalities": {
+            "input": ["text"],
+            "output": ["text"]
+        },
+        "categories": ["reasoning", "code_generation", "science", "math", "document_processing", "agentic_workflows"],
+        "use_cases": ["real_time_coding_assistance", "document_qa", "research_workflows"],
+        "api_base": "https://api.cerebras.ai/v1"
+    },
+    {
+        "config_name": "llama3.1-8b",
+        "client": "cerebras",
+        "model": "llama3.1-8b",
+        "temperature": 0.7,
+        "max_tokens": 8000,
+        "context_window": 8000,
+        "speed_tokens_per_sec": 2200,
+        "rate_limits": {
+            "free": {
+                "requests_per_minute": 30,
+                "input_tokens_per_minute": 60000,
+                "daily_tokens": 1000000
+            }
+        },
+        "capabilities": ["streaming", "structured_outputs", "tool_calling"],
+        "languages": ["English"],
+        "modalities": {
+            "input": ["text"],
+            "output": ["text"]
+        },
+        "categories": ["chat", "customer_service", "real_time_applications", "batch_processing"],
+        "use_cases": ["real_time_chat", "customer_service", "interactive_gaming", "batch_processing"],
+        "api_base": "https://api.cerebras.ai/v1"
+    },
+    {
+        "config_name": "claude-haiku-4.5",
+        "client": "anthropic",
+        "model": "anthropic.claude-haiku-4-5-20251001-v1:0",
+        "temperature": 0.7,
+        "max_tokens": 4000,
+        "context_window": 200000,
+        "languages": ["English", "French", "Modern Standard Arabic", "Mandarin Chinese", "Hindi", "Spanish", "Portuguese", "Korean", "Japanese", "German", "Russian", "Polish"],
+        "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+        },
+        "categories": ["hybrid_reasoning", "extended_thinking", "efficient_code_generation", "enhanced_text_generation", "agentic_search", "efficient_research", "computer_use", "tool_use", "real_time_support", "task_efficiency", "text_and_image_inputs", "steering", "memory"],
+        "use_cases": ["free_tier_experiences", "real_time_applications", "coding_sub_agents", "financial_sub_agents", "research_sub_agents", "business_tasks"],
+        "api_base": "https://api.anthropic.com/v1"
+    },
+    {
+        "config_name": "qwen3-next-80b",
+        "client": "qwen",
+        "model": "qwen.qwen3-next-80b-a3b",
+        "temperature": 0.7,
+        "max_tokens": 4000,
+        "context_window": 256000,
+        "languages": ["English", "Chinese"],
+        "modalities": {
+            "input": ["text"],
+            "output": ["text"]
+        },
+        "architecture": {
+            "type": "MoE",
+            "total_parameters": "80B",
+            "active_parameters": "3B",
+            "attention": "hybrid (Gated DeltaNet + Gated Attention)",
+            "features": ["Multi-Token Prediction"]
+        },
+        "categories": ["text_generation", "code_generation", "long_context_reasoning", "question_answering", "summarization", "tool_use", "multilingual_support", "agentic_workflows", "deep_chain_of_thought_reasoning", "math_and_logic", "long_context_analysis"],
+        "use_cases": ["long_context_summarization", "code_generation_refactoring", "enterprise_knowledge_qa", "rag_systems", "agentic_workflows_100k_plus_tokens"],
+        "api_base": "https://api.qwen.com/v1"
+    },
+    {
+        "config_name": "mistral-large-3",
+        "client": "mistral",
+        "model": "mistral.mistral-large-3-675b-instruct",
+        "temperature": 0.7,
+        "max_tokens": 4000,
+        "context_window": 256000,
+        "languages": ["English", "French", "Spanish", "German", "Russian", "Chinese", "Japanese", "Italian", "Portuguese", "Dutch", "Polish", "Vietnamese", "Indonesian", "Czech", "Turkish", "Farsi", "Greek", "Swedish", "Arabic", "Hungarian", "Romanian", "Finnish", "Danish", "Norwegian", "Hebrew", "Catalan", "Hindi", "Korean", "Bengali", "Tamil", "Serbian", "Urdu", "Nepali", "Marathi", "Croatian", "Telugu", "Khmer", "Tagalog", "Gujarati", "Malay", "Kannada", "Punjabi", "Lao", "Breton"],
+        "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+        },
+        "architecture": {
+            "type": "MoE",
+            "total_parameters": "675B",
+            "active_parameters": "41B",
+            "language_model_parameters": "673B",
+            "vision_encoder_parameters": "2.5B"
+        },
+        "categories": ["text_generation", "code_generation", "rich_text_formatting", "multimodal", "long_context_reasoning", "agentic_capabilities"],
+        "use_cases": ["production_assistants", "rag_systems", "scientific_workloads", "enterprise_workflows"],
+        "api_base": "https://api.mistral.ai/v1"
+    },
+    {
+        "config_name": "deepseek-r1",
+        "client": "deepseek",
+        "model": "deepseek.r1-v1:0",
+        "temperature": 0.7,
+        "max_tokens": 4000,
+        "context_window": 128000,
+        "languages": ["English", "Chinese"],
+        "modalities": {
+            "input": ["text"],
+            "output": ["text"]
+        },
+        "categories": ["text_generation", "code_generation", "reasoning", "math", "science"],
+        "use_cases": ["general_reasoning_tasks", "math_problems", "science_tasks", "code_generation"],
+        "training_method": "cold_start_data_and_reinforcement_learning",
+        "license": "MIT",
+        "api_base": "https://api.deepseek.com/v1"
+    },
+    {
+        "config_name": "model_1",
+        "client": "openai",
+        "model": "gpt-5-nano",
+        "temperature": 0.7,
+        "max_tokens": 4000,
+        "context_window": 128000,
+        "api_base": "https://api.openai.com/v1"
     },
     {
         "config_name": "model_2",
         "client": "openai",
-        "model": "gpt-4o-mini",
+        "model": "gpt-5-nano",
         "temperature": 0.7,
-        "max_tokens": 1000,
+        "max_tokens": 4000,
+        "context_window": 128000,
         "api_base": "https://api.openai.com/v1"
     }
 ]

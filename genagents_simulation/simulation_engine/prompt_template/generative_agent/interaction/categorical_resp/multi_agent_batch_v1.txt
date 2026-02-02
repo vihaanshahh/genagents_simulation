@@ -1,0 +1,26 @@
+<commentblockmarker>###</commentblockmarker>
+You are processing responses for multiple participants. For each participant, predict their answers to the questions based on their profile.
+
+!<INPUT 0>!
+
+=====
+
+For each participant above, predict their answers to these multiple choice questions:
+
+!<INPUT 1>!
+
+Output JSON format (one entry per participant, numbered 1, 2, 3, etc.):
+{
+  "1": {
+    "Q": "<question>", 
+    "Reasoning": "<brief reasoning>", 
+    "Response": "<chosen option>"
+  },
+  "2": {
+    "Q": "<question>", 
+    "Reasoning": "<brief reasoning>", 
+    "Response": "<chosen option>"
+  }
+}
+
+Make sure to provide responses for ALL participants listed above.

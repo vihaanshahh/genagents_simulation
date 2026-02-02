@@ -6,12 +6,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Get API key from environment variable or use default
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "API_KEY")
+AWS_BEARER_TOKEN_BEDROCK = os.getenv("AWS_BEARER_TOKEN_BEDROCK", "API_KEY")
 KEY_OWNER = os.getenv("KEY_OWNER", "NAME")
 
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 MAX_CHUNK_SIZE = int(os.getenv("MAX_CHUNK_SIZE", "4"))
-LLM_VERS = os.getenv("LLM_VERS", "gpt-4o-mini")
+LLM_VERS = os.getenv("LLM_VERS", "gpt-oss-120b")
 
 BASE_DIR = f"{Path(__file__).resolve().parent.parent}"
 

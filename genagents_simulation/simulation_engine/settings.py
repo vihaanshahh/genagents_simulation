@@ -5,7 +5,7 @@ import os
 # Load environment variables from .env file
 load_dotenv()
 
-# Fetch API key from environment
+# Fetch OpenAI API key from environment
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 KEY_OWNER = "host"
 
@@ -13,7 +13,7 @@ DEBUG = False
 
 MAX_CHUNK_SIZE = 4
 
-LLM_VERS = "gpt-4o-mini"
+LLM_VERS = "llama3.1-8b"
 
 BASE_DIR = f"{Path(__file__).resolve().parent.parent}"
 

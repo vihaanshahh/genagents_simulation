@@ -1,207 +1,273 @@
-# GenAgents Simulation Module
+# GenAgents Simulation
 
-GenAgents Simulation is a powerful Naptha Module designed to simulate interactions and responses from a vast population of generative agents. With **3,505 total agents**, this module enables the creation of complex multi-agent environments, social simulations, and large-scale testing scenarios. Whether you're building social simulations, testing AI behaviors, or creating dynamic environments, GenAgents Simulation provides the flexibility and scalability you need.
+Multi-agent simulation with **3,505 agents** powered by Cerebras AI.
 
-## Table of Contents
+## Features
 
-- [🔍 Overview](#-overview)
-- [🚀 Features](#-features)
-- [🛠 Installation](#-installation)
-- [⚙️ Configuration](#️-configuration)
-- [💻 Usage](#-usage)
-  - [Command Syntax](#command-syntax)
-  - [Example Commands](#example-commands)
-- [🌐 Deployment](#-deployment)
-- [📊 Understanding the Output](#-understanding-the-output)
-- [📜 License](#-license)
+- **4 Cerebras Models** - Auto-optimized for cost ($0.10-$2.75/1M tokens)
+- **Auto-Batching** - Smart batch sizing based on model config
+- **Cost Tracking** - Real-time breakdown per request
+- **Admin Dashboard** - Track usage, costs, model split
+- **Concurrent Models** - Run 2-4 models simultaneously
+- **Rate Limit Safe** - 60k tokens/min managed globally
 
-## 🔍 Overview
+## Quick Start
 
-GenAgents Simulation leverages large language models (LLMs) to generate realistic and diverse agent behaviors. Each agent can simulate responses based on predefined personas, configurations, and prompts, allowing for intricate simulations of social dynamics, decision-making processes, and more.
-
-### Key Highlights
-
-- **Massive Agent Pool:** Simulate interactions with up to **3,505 agents**, enabling large-scale simulations.
-- **Customizable Configurations:** Tailor agent behaviors using detailed configurations in `deployment.json`.
-- **Dynamic Responses:** Agents generate responses based on the latest LLM configurations, ensuring up-to-date and relevant interactions.
-- **Scalable Architecture:** Designed to run efficiently on local machines or distributed Naptha Nodes.
-
-## 🚀 Features
-
-- **Flexible Input Parameters:** Customize questions, options, LLM configurations, and agent counts via command-line arguments.
-- **Detailed Summaries:** Receive comprehensive summaries of agent responses, including counts, percentages, visual representations, and explanations.
-- **Extensible Design:** Easily extendable to accommodate new agent behaviors, personas, and configurations.
-
-## 🛠 Installation
-
-### Prerequisites
-
-- **Python 3.12** or higher
-- **Poetry** for dependency management
-- **Naptha SDK** installed and configured
-
-### Install Poetry
-
-If you haven't installed Poetry yet, follow these steps:
-
+### Install
 ```bash
-curl -sSL https://install.python-poetry.org | python3 -
-export PATH="$HOME/.local/bin:$PATH"
+pip install -r requirements.txt
 ```
 
-### Clone the Repository
-
+### Configure
+Create `.env`:
 ```bash
-git clone https://github.com/vihaanshah2014/genagents_simulation
-cd genagents_simulation
+# Cerebras (required)
+CEREBRAS_API_KEY=your_key
+CEREBRAS_LLAMA31_ENABLED=true       # $0.10/$0.10 - CHEAPEST
+CEREBRAS_GPT_OSS_ENABLED=true       # $0.35/$0.75 - FASTEST
+CEREBRAS_QWEN_ENABLED=true          # $0.60/$1.20 - BALANCED
+CEREBRAS_GLM_ENABLED=false          # $2.25/$2.75 - REASONING
+
+# Neon DB for admin metrics (optional)
+DATABASE_URL=postgresql://user:pass@host/db
+
+# AWS Bedrock fallback (optional)
+AWS_ACCESS_KEY_ID=your_key
+AWS_SECRET_ACCESS_KEY=your_secret
 ```
 
-### Install Dependencies
-
+### Run
 ```bash
-poetry install
+python -m genagents_simulation.api
 ```
 
-### Setup Environment Variables
-
-Create a copy of the `.env.example` file:
-
+### Test
 ```bash
-cp .env.example .env
+curl -X POST http://localhost:8000/simulate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "Do you support renewable energy?",
+    "options": ["Yes", "No", "Undecided"],
+    "agent_count": 100,
+    "llm_config_name": "llama3.1-8b",
+    "use_memory": false
+  }'
 ```
 
-Edit the `.env` file to include necessary environment variables, such as `PRIVATE_KEY` and `OPENAI_API_KEY` if using OpenAI.
+## API Endpoints
 
-## ⚙️ Configuration
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/simulate` | POST | Run simulation |
+| `/simulate/stream` | POST | Run with real-time progress |
+| `/admin` | GET | Admin dashboard (HTML) |
+| `/admin/dashboard` | GET | Dashboard data (JSON) |
+| `/admin/metrics?days=30` | GET | Detailed metrics |
+| `/metrics` | GET | Real-time provider status |
+| `/models` | GET | List available models |
 
-### Deployment Configuration
+## Admin Dashboard
 
-The `deployment.json` file located in `genagents_simulation/configs/` defines how agents are deployed and configured. Here's a sample structure:
+### View in Browser
 
-```json
-[
-    {
-        "name": "deployment_1",
-        "module": {"name": "genagents_simulation"},
-        "node": {"ip": "localhost", "port": 7001},
-        "config": {
-            "config_name": "agent_config_1",
-            "llm_config": {"config_name": "model_2"},
-            "persona_module": {
-                "url": "https://huggingface.co/datasets/richardblythman/characterfile_richardblythman"
-            },
-            "system_prompt": {
-                "role": "You are a helpful AI assistant.",
-                "persona": ""
-            }
-        }
-    }
-]
-```
+**Open:** `http://localhost:8000/admin`
 
-Ensure that each deployment entry includes all required fields as per the `AgentDeployment` schema.
+Real-time dashboard with:
+- Today/Week/Month stats
+- Model split percentages
+- Provider status
+- Auto-refresh
 
-### LLM Configurations
-
-LLM configurations are defined in `llm_configs.json`. Customize these to change the underlying language models used by the agents.
-
-## 💻 Usage
-
-GenAgents Simulation can be executed directly via the command line, allowing you to specify custom questions, options, LLM configurations, and the number of agents.
-
-### Command Syntax
-
+### API Access
 ```bash
-python genagents_simulation/run.py --question "<YOUR_QUESTION>" --options "<OPTION1,OPTION2,...>" [--llm_config_name "<LLM_CONFIG>"] [--agent_count <NUMBER>]
+curl http://localhost:8000/admin/dashboard
 ```
 
-### Example Commands
-
-1. **Basic Usage**
-
-    Simulate a single agent answering a simple question:
-
-    ```bash
-    python genagents_simulation/run.py --question "Do you support increasing the minimum wage?" --options "Yes,No,Undecided"
-    ```
-
-2. **Specify LLM Configuration and Multiple Agents**
-
-    Run the simulation with a specific LLM configuration and multiple agents:
-
-    ```bash
-    python genagents_simulation/run.py --question "Should public transportation be free?" --options "Yes,No,Depends" --llm_config_name "model_3" --agent_count 5
-    ```
-
-3. **Custom LLM Configuration**
-
-    Use a different LLM configuration for varied responses:
-
-    ```bash
-    python genagents_simulation/run.py --question "Is climate change a significant threat?" --options "Yes,No" --llm_config_name "model_4" --agent_count 10
-    ```
-
-## 🌐 Deployment
-
-### Running Locally
-
-Ensure that your Naptha Node and Hub are running locally. Then execute the module using the command syntax provided above.
-
-### Deploying to a Naptha Node
-
-1. **Register the Module**
-
-    Register your module on the Naptha Hub:
-
-    ```bash
-    naptha agents genagents_simulation -p "description='GenAgents Simulation Module' url='ipfs://<YOUR_IPFS_HASH>' type='package' version='1.0'"
-    ```
-
-2. **Run the Module on the Node**
-
-    Execute the module on your Naptha Node:
-
-    ```bash
-    naptha run agent:genagents_simulation --question "Do you support increasing the minimum wage?" --options "Yes,No,Undecided" --llm_config_name "model_2" --agent_count 1
-    ```
-
-## 📊 Understanding the Output
-
-When you run the simulation, the output will be a JSON object containing:
-
-- **individual_responses**: Each agent's response and reasoning.
-- **summary**: Aggregated data including counts, percentages, visual representations, and explanations for each option.
-- **num_agents**: The total number of agents that participated in the simulation.
-
-### Sample Output
-
+Response:
 ```json
 {
-    "individual_responses": [
-        {
-            "responses": ["Yes"],
-            "reasonings": ["Given the participant's slightly liberal political views and their emphasis on the importance of community and social impact in their work, it is reasonable to predict that they would support increasing the minimum wage. They have not indicated any strong opposition to social welfare policies."]
-        }
-    ],
-    "summary": {
-        "Do you support increasing the minimum wage?": {
-            "counts": {"Yes": 1, "No": 0, "Undecided": 0},
-            "percentages": {"Yes": "100.0%", "No": "0.0%", "Undecided": "0.0%"},
-            "visual": {"Yes": "████████████████████ 1/1", "No": " 0/1", "Undecided": " 0/1"},
-            "explanations": [
-                "Given the participant's slightly liberal political views and their emphasis on the importance of community and social impact in their work, it is reasonable to predict that they would support increasing the minimum wage. They have not indicated any strong opposition to social welfare policies."
-            ]
-        }
+  "today": {"requests": 50, "agents": 5000, "cost": 0.25},
+  "this_week": {"requests": 300, "agents": 30000, "cost": 1.50},
+  "this_month": {"requests": 1200, "agents": 120000, "cost": 6.00},
+  "model_split": [
+    {
+      "model": "llama3.1-8b",
+      "cost": 4.50,
+      "cost_percentage": 75.0,
+      "token_percentage": 80.0,
+      "request_count": 900
     },
-    "num_agents": 1
+    {
+      "model": "gpt-oss-120b",
+      "cost": 1.50,
+      "cost_percentage": 25.0,
+      "token_percentage": 20.0,
+      "request_count": 300
+    }
+  ],
+  "provider_status": {
+    "cerebras_llama3.1-8b": {
+      "daily_tokens_used": 450000,
+      "tokens_remaining": 550000,
+      "success_rate": "98.5%"
+    }
+  }
 }
 ```
 
-### Breakdown
+### View Detailed Metrics
+```bash
+curl http://localhost:8000/admin/metrics?days=7
+```
 
-- **individual_responses**: Detailed responses from each agent, including their reasoning.
-- **summary**: Aggregated results showing how many agents chose each option, the percentage breakdown, visual bars representing the distribution, and aggregated explanations.
-- **num_agents**: Indicates the number of agents that participated.
----
+Shows:
+- Total accumulated costs
+- Model usage split (which models used most)
+- Daily trends
+- Token consumption
+- Recent requests
+- Cost per agent statistics
 
-For further assistance or to contribute, please contact me at [vihaan.shah2014@gmail.com](mailto:vihaan.shah2014@gmail.com).
+## Model Selection
+
+| Model | Cost (in/out) | Speed | Best For |
+|-------|---------------|-------|----------|
+| **llama3.1-8b** | $0.10/$0.10 | 2200/s | Cost optimization |
+| **gpt-oss-120b** | $0.35/$0.75 | 3000/s | Speed + reasoning |
+| **qwen-3-235b** | $0.60/$1.20 | 1400/s | Balanced |
+| **zai-glm-4.7** | $2.25/$2.75 | 1000/s | Advanced reasoning |
+
+**Default**: llama3.1-8b (cheapest)
+
+## API Parameters
+
+```json
+{
+  "question": "Your question",
+  "options": ["Option1", "Option2"],
+  "agent_count": 100,
+  "llm_config_name": "llama3.1-8b",
+  "use_memory": false,
+  "filters": {
+    "states": ["CA", "NY"],
+    "age_min": 25,
+    "age_max": 65
+  }
+}
+```
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `question` | string | required | Question to ask agents |
+| `options` | array | required | Answer options |
+| `agent_count` | integer | 1 | Number of agents |
+| `llm_config_name` | string | llama3.1-8b | Model to use |
+| `use_memory` | boolean | false | Enable agent memory (slower, richer) |
+| `filters` | object | null | Demographic filters |
+
+**Auto-optimized** (no manual config needed):
+- `agents_per_api_call` - Batch size based on context window, pricing, rate limits
+- `max_memories_per_agent` - Memory depth based on model pricing (10-20)
+
+## Response Format
+
+```json
+{
+  "individual_responses": [...],
+  "summary": {
+    "Your question": {
+      "counts": {"Yes": 75, "No": 25},
+      "percentages": {"Yes": "75.0%", "No": "25.0%"}
+    }
+  },
+  "num_agents": 100,
+  "execution_time_seconds": 12.5,
+  "successful_responses": 98,
+  "failed_responses": 2,
+  "optimization_settings": {
+    "agents_per_api_call": 150,
+    "max_memories_per_agent": 0,
+    "model": "llama3.1-8b"
+  },
+  "cost_breakdown": {
+    "total_usd": 0.0125,
+    "cost_per_agent": 0.000125,
+    "estimated_cost_per_1000_agents": 0.13,
+    "by_model": {"llama3.1-8b": 0.0125}
+  },
+  "token_usage": {
+    "total_input_tokens": 50000,
+    "total_output_tokens": 12500
+  }
+}
+```
+
+## Cost Examples
+
+| Scenario | Model | Agents | Cost | Time |
+|----------|-------|--------|------|------|
+| Testing | llama3.1-8b | 10 | $0.0005 | 2s |
+| Production | gpt-oss-120b | 500 | $0.14 | 30s |
+| Research | qwen-3-235b | 100 | $0.20 | 1m |
+
+**Budget calculator:**
+- 1000 agents/day with llama3.1-8b = $0.05/day = **$1.50/month**
+- 1000 agents/day with gpt-oss-120b = $0.28/day = **$8.40/month**
+
+## Load Balancing
+
+System uses priority-based distribution:
+
+1. **llama3.1-8b** tried first (cheapest, fast)
+2. **gpt-oss-120b** if llama fails (fastest)
+3. **qwen-3-235b** if both fail (balanced)
+4. **AWS Bedrock** fallback if all Cerebras exhausted
+5. **OpenAI** last resort
+
+**Automatic:**
+- Rate limit handling (60k tokens/min shared)
+- Daily token tracking (1M/day per model)
+- Failover on errors/timeouts
+- Cost optimization
+
+## Neon DB Setup (Optional)
+
+For admin metrics tracking:
+
+```bash
+# Create Neon project (via Neon CLI)
+neonctl projects create --name genagents-metrics
+
+# Get connection string
+neonctl connection-string
+
+# Add to .env
+DATABASE_URL=postgresql://...
+```
+
+Schema auto-creates on first run. Tracks:
+- All simulation requests
+- Model usage split
+- Daily cost trends
+- Token consumption
+
+## AWS Deployment
+
+Using AWS Bedrock endpoint:
+
+```bash
+# Configure
+AWS_ACCESS_KEY_ID=your_key
+AWS_SECRET_ACCESS_KEY=your_secret
+AWS_REGION=us-east-1
+
+# Deploy
+docker build -t genagents .
+docker run -p 8000:8000 --env-file .env genagents
+```
+
+## License
+
+MIT

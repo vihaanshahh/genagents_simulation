@@ -259,14 +259,16 @@ def extract_relevance(seq_nodes, embeddings, focal_pt):
     seq_nodes: A list of Node object in a chronological order. 
     focal_pt: A string describing the current thought of revent of focus.  
   Returns: 
-    relevance_out: A dictionary whose keys are the node.node_id and whose 
+    relevance_out: A dictionary whose keys are the node.node_id and whose
                    values are the float that represents the relevance score.
   """
   focal_embedding = get_text_embedding(focal_pt)
 
   relevance_out = dict()
   for count, node in enumerate(seq_nodes): 
-    node_embedding = embeddings[node.content]
+    node_embedding = embeddings.get(node.content)
+    if node_embedding is None:
+      continue
     relevance_out[node.node_id] = cos_sim(node_embedding, focal_embedding)
 
   return relevance_out
@@ -377,15 +379,39 @@ class MemoryStream:
           curr_nodes += [curr_node]
 
     # <retrieved> is the main dictionary that we are returning
-    retrieved = dict() 
+    retrieved = dict()
+    
+    # Pre-compute recency and importance once (same for all focal points)
+    x = extract_recency(curr_nodes)
+    recency_out = normalize_dict_floats(x, 0, 1)
+    x = extract_importance(curr_nodes)
+    importance_out = normalize_dict_floats(x, 0, 1)
+    
+    # Batch get embeddings for all focal points at once (much faster)
+    focal_embeddings_dict = {}
+    try:
+      from genagents_simulation.simulation_engine.gpt_structure import get_text_embeddings_batch
+      if len(focal_points) > 1:
+        focal_embeddings = get_text_embeddings_batch(focal_points)
+        focal_embeddings_dict = {fp: emb for fp, emb in zip(focal_points, focal_embeddings)}
+    except Exception as e:
+      import logging
+      logger = logging.getLogger(__name__)
+      logger.debug(f"Batch embedding failed, using individual calls: {str(e)[:100]}")
+    
     for focal_pt in focal_points: 
-      # Calculating the component dictionaries and normalizing them.
-      x = extract_recency(curr_nodes)
-      recency_out = normalize_dict_floats(x, 0, 1)
-      x = extract_importance(curr_nodes)
-      importance_out = normalize_dict_floats(x, 0, 1)  
-      x = extract_relevance(curr_nodes, self.embeddings, focal_pt)
-      relevance_out = normalize_dict_floats(x, 0, 1)
+      # Use batched embedding if available, otherwise fall back to single call
+      if focal_pt in focal_embeddings_dict:
+        focal_embedding = focal_embeddings_dict[focal_pt]
+        relevance_out = {}
+        for node in curr_nodes:
+          node_embedding = self.embeddings.get(node.content)
+          if node_embedding is not None:
+            relevance_out[node.node_id] = cos_sim(node_embedding, focal_embedding)
+        relevance_out = normalize_dict_floats(relevance_out, 0, 1)
+      else:
+        x = extract_relevance(curr_nodes, self.embeddings, focal_pt)
+        relevance_out = normalize_dict_floats(x, 0, 1)
       
       # Computing the final scores that combines the component values. 
       master_out = dict()
